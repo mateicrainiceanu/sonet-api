@@ -30,10 +30,24 @@ app.post("/register", async (req, res) => {
 
 			const newUser = new User({email, name, hash: userhash});
 			await newUser.save();
-			signToken(newUser, req, res)
+			signToken(newUser, req, res);
 		}
 	} else {
 		res.status(400).send("Invalid request");
+	}
+});
+
+app.post("/login", async (req, res) => {
+	const {email, password} = req.body;
+
+	const user = await User.findOne({email: email});
+
+	if (user == null) {
+		res.status(400).send("No user with this email adress.");
+	} else {
+		const passmatch = await bcrypt.compare(password, user.hash);
+		if (passmatch) signToken(user, req, res);
+		else res.status(400).send("Wrong password!");
 	}
 });
 
