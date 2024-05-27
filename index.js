@@ -82,6 +82,10 @@ app.get("/sonete", auth, async (req, res) => {
 	res.status(200).json({sonete});
 });
 
+app.get("/user", auth, (req, res) => {
+	res.status(200).json(req.user);
+})
+
 app.listen(port, () => {
 	console.log("Server started on port: " + port);
 });
