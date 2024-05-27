@@ -16,8 +16,14 @@ mongoose.connect(process.env.MONGO_URL);
 app.use(bodyParser.json());
 app.use(cors());
 
-const User = mongoose.model("User", {name: String, email: String, hash: String});
-const Sonet = mongoose.model("Sonet", {fromUserId: String, forUserId: String, mesaj: String});
+const userSchema = new mongoose.Schema({name: String, email: String, hash: String});
+
+const User = mongoose.model("User", userSchema);
+const Sonet = mongoose.model("Sonet", {
+	fromUserId: {type: mongoose.Schema.Types.ObjectId, ref: "User"},
+	forUserId: {type: mongoose.Schema.Types.ObjectId, ref: "User"},
+	mesaj: String,
+});
 
 app.post("/register", async (req, res) => {
 	const {email, name, password} = req.body;
@@ -65,17 +71,15 @@ app.patch("/sonet/:id", auth, async (req, res) => {
 	const sonetId = req.params.id;
 	const {mesaj} = req.body;
 
-	const {modifiedCount} = await Sonet.updateOne({_id: sonetId}, {mesaj})
+	const {modifiedCount} = await Sonet.updateOne({_id: sonetId}, {mesaj});
 
-	console.log(antw);
-
-	if(modifiedCount)
-		res.status(200).json({sonetId, mesaj});
-
+	if (modifiedCount) res.status(200).json({sonetId, mesaj});
+	else res.status(500).send("Error saving your Sonet");
 });
 
-app.get("/test", (req, res) => {
-	res.status(200).send();
+app.get("/sonete", auth, async (req, res) => {
+	const sonete = await Sonet.find({fromUserId: req.user.id, mesaj:{$ne: null}}).populate("fromUserId");
+	res.status(200).json({sonete});
 });
 
 app.listen(port, () => {
