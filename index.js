@@ -4,6 +4,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 var bcrypt = require("bcrypt");
 const signToken = require("./signtoken");
+const auth = require("./auth");
 require("dotenv").config();
 
 const app = express();
@@ -16,6 +17,7 @@ app.use(bodyParser.json());
 app.use(cors());
 
 const User = mongoose.model("User", {name: String, email: String, hash: String});
+const Sonet = mongoose.model("Sonet", {fromUserId: String, forUserId: String, mesaj: String});
 
 app.post("/register", async (req, res) => {
 	const {email, name, password} = req.body;
@@ -49,6 +51,27 @@ app.post("/login", async (req, res) => {
 		if (passmatch) signToken(user, req, res);
 		else res.status(400).send("Wrong password!");
 	}
+});
+
+app.post("/id-sonete", auth, async (req, res) => {
+	const num = req.body.number;
+	const fromUserId = req.user.id;
+	const sonete = Array(num).fill({fromUserId});
+	const son = await Sonet.insertMany(sonete);
+	res.json({sonets: son});
+});
+
+app.patch("/sonet/:id", auth, async (req, res) => {
+	const sonetId = req.params.id;
+	const {mesaj} = req.body;
+
+	const {modifiedCount} = await Sonet.updateOne({_id: sonetId}, {mesaj})
+
+	console.log(antw);
+
+	if(modifiedCount)
+		res.status(200).json({sonetId, mesaj});
+
 });
 
 app.get("/test", (req, res) => {
