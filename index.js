@@ -71,11 +71,8 @@ app.post("/id-sonete", auth, async (req, res) => {
 app.patch("/sonet/:id", auth, async (req, res) => {
 	const sonetId = req.params.id;
 	const {mesaj, forName} = req.body;
-
-	const {modifiedCount} = await Sonet.updateOne({_id: sonetId}, {mesaj, forName});
-
-	if (modifiedCount) res.status(200).json({sonetId, mesaj});
-	else res.status(500).send("Error saving your Sonet");
+	await Sonet.updateOne({_id: sonetId}, {mesaj, forName});
+	res.status(200).json({sonetId, mesaj});
 });
 
 app.get("/sonete", auth, async (req, res) => {
@@ -84,9 +81,12 @@ app.get("/sonete", auth, async (req, res) => {
 });
 
 app.get("/sonet/:id", async (req, res) => {
-	const sonet = await Sonet.findById({_id: req.params.id}).populate("fromUserId");
+	const sonet = await Sonet.findById({_id: req.params.id})
+		.populate("fromUserId")
+		.catch(() => {
+			res.status(400).send("No sonet found...");
+		});
 	if (sonet) res.status(200).json(sonet);
-	else res.status(400).send("No sonet found...");
 });
 
 app.delete("/sonet/:id", async (req, res) => {
