@@ -79,13 +79,25 @@ app.patch("/sonet/:id", auth, async (req, res) => {
 });
 
 app.get("/sonete", auth, async (req, res) => {
-	const sonete = await Sonet.find({fromUserId: req.user.id, mesaj:{$ne: null}}).populate("fromUserId");
+	const sonete = await Sonet.find({fromUserId: req.user.id});
 	res.status(200).json({sonete});
+});
+
+app.get("/sonet/:id", async (req, res) => {
+	const sonet = await Sonet.findById({_id: req.params.id}).populate("fromUserId");
+	if (sonet) res.status(200).json(sonet);
+	else res.status(400).send("No sonet found...");
+});
+
+app.delete("/sonet/:id", async (req, res) => {
+	const {deletedCount} = await Sonet.deleteOne({_id: req.params.id});
+	if (deletedCount) res.status(200).send("Deleted");
+	else res.status(500).send("Error deleting! Try again!");
 });
 
 app.get("/user", auth, (req, res) => {
 	res.status(200).json(req.user);
-})
+});
 
 app.listen(port, () => {
 	console.log("Server started on port: " + port);
