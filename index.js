@@ -22,6 +22,7 @@ const User = mongoose.model("User", userSchema);
 const Sonet = mongoose.model("Sonet", {
 	fromUserId: {type: mongoose.Schema.Types.ObjectId, ref: "User"},
 	forUserId: {type: mongoose.Schema.Types.ObjectId, ref: "User"},
+	forName: String,
 	mesaj: String,
 });
 
@@ -69,9 +70,9 @@ app.post("/id-sonete", auth, async (req, res) => {
 
 app.patch("/sonet/:id", auth, async (req, res) => {
 	const sonetId = req.params.id;
-	const {mesaj} = req.body;
+	const {mesaj, forName} = req.body;
 
-	const {modifiedCount} = await Sonet.updateOne({_id: sonetId}, {mesaj});
+	const {modifiedCount} = await Sonet.updateOne({_id: sonetId}, {mesaj, forName});
 
 	if (modifiedCount) res.status(200).json({sonetId, mesaj});
 	else res.status(500).send("Error saving your Sonet");
