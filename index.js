@@ -64,8 +64,9 @@ app.post("/id-sonete", auth, async (req, res) => {
 	const num = req.body.number;
 	const fromUserId = req.user.id;
 	const sonete = Array(num).fill({fromUserId});
-	const son = await Sonet.insertMany(sonete);
-	res.json({sonets: son});
+	await Sonet.insertMany(sonete);
+	const sonets = await Sonet.find({fromUserId: req.user.id});
+	res.json({sonets: sonets});
 });
 
 app.patch("/sonet/:id", auth, async (req, res) => {
