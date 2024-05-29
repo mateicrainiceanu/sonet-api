@@ -6,6 +6,7 @@ var bcrypt = require("bcrypt");
 const signToken = require("./signtoken");
 const auth = require("./auth");
 require("dotenv").config();
+const jwt = require("jsonwebtoken");
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -64,7 +65,7 @@ app.post("/id-sonete", auth, async (req, res) => {
 	const num = req.body.number;
 	const fromUserId = req.user.id;
 	const sonete = Array(num).fill({fromUserId});
-	const newSonets  = await Sonet.insertMany(sonete);
+	const newSonets = await Sonet.insertMany(sonete);
 	const sonets = await Sonet.find({fromUserId: req.user.id});
 	res.json({sonets: sonets, newSonets});
 });
@@ -81,13 +82,35 @@ app.get("/sonete", auth, async (req, res) => {
 	res.status(200).json({sonete});
 });
 
+app.get("/for-me", auth, async (req, res) => {
+	const sonete = await Sonet.find({forUserId: req.user.id}).populate("fromUserId");
+	res.status(200).json({sonete});
+});
+
 app.get("/sonet/:id", async (req, res) => {
+	let userId;
+	const token = req.body.token || req.query.token;
+	if (token) {
+		jwt.verify(token, process.env.TOKEN_KEY, (err, decoded) => {
+			if (!err) userId = decoded.id;
+		});
+	}
+
 	const sonet = await Sonet.findById({_id: req.params.id})
 		.populate("fromUserId")
 		.catch(() => {
 			res.status(400).send("No sonet found...");
 		});
-	if (sonet) res.status(200).json(sonet);
+	if (sonet) {
+		res.status(200).json({...{...sonet}._doc, userCanEdit: sonet.fromUserId._id == userId ? true : false});
+	} else if (sonet === null) res.status(400).send("No sonet found...");
+});
+
+app.post("/sonet-user", auth, async (req, res) => {
+	console.log(req.user.id);
+	const {acknowledged} = await Sonet.updateOne({_id: req.body.sonetId}, {forUserId: req.user.id});
+	if (acknowledged) res.status(200).send("Saved to your account");
+	else res.status(500).send("Failed");
 });
 
 app.delete("/sonet/:id", async (req, res) => {
